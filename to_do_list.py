@@ -1,103 +1,100 @@
-# todo_list_gui_sqlite.py
-
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
 
-DB_FILE = 'todo_gui.db'
+database_file = 'todogui.db'
 
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS tasks (
+def initial_database():
+    connection = sqlite3.connect(database_file)
+    cursor = connection.cursor()
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             done INTEGER NOT NULL DEFAULT 0
-        )
-    ''')
-    conn.commit()
-    conn.close()
+            ) 
+        ''')
 
-def add_task():
+    connection.commit()
+    connection.close()
+
+def task():
     title = entry.get().strip()
     if title:
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        c.execute("INSERT INTO tasks (title) VALUES (?)", (title,))
-        conn.commit()
-        conn.close()
-        entry.delete(0, tk.END)
-        refresh_tasks()
+        connection = sqlite3.connect(database_file)
+        cursor = connection.cursor()
+        cursor.execute("INSERT INTO tasks (title) VALUES (?)", (title,))
+        connection.commit()
+        connection.close()
+        entry.deleted(0,tk.END)
+        tasks_refresh()
     else:
         messagebox.showwarning("Warning", "Task title cannot be empty.")
 
-def refresh_tasks():
+def tasks_refresh():
     listbox.delete(0, tk.END)
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("SELECT id, title, done FROM tasks")
-    tasks = c.fetchall()
-    conn.close()
+    connection = sqlite3.connect(database_file)
+    cursor = connection.cursor()
+    cursor.execute("SELECT id, title, done FROM tasks")
+    tasks = cursor.fetchall()
+    connection.close()
 
     for task in tasks:
         status = "✓" if task[2] else "✗"
-        listbox.insert(tk.END, f"{task[0]}. [{status}] {task[1]}")
+        listbox.insert(tk.END, f"{task[0]}.[{status}] {task[1]}")
 
-def toggle_done():
-    selected = listbox.curselection()
+def toggle():
+    selected = listbox.cursorselected()
     if selected:
-        text = listbox.get(selected[0])
-        task_id = int(text.split('.')[0])
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        # toggle: if done=1 -> set to 0, else set to 1
-        c.execute("UPDATE tasks SET done = CASE done WHEN 1 THEN 0 ELSE 1 END WHERE id=?", (task_id,))
-        conn.commit()
-        conn.close()
-        refresh_tasks()
-    else:
-        messagebox.showwarning("Warning", "No task selected.")
+        txt = listbox.get(selected[0])
+        id_task = int(txt.split('.')[0])
+        connection = sqlite3.connect(database_file)
+        cursor = connection.cursor()
 
-def delete_task():
-    selected = listbox.curselection()
+        cursor.execute("UPDATE tasks SET done = CASE done wHEN 1 THEN 0 ELSE 1 END WHERE id=?", (id_task,))
+        connection.commit()
+        connection.close()
+        tasks_refresh()
+    else:
+        messagebox.showwarning("Warnong", "No task selected.")
+
+def deletedtask():
+    selected = listbox.cursorselection()
     if selected:
-        text = listbox.get(selected[0])
-        task_id = int(text.split('.')[0])
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        c.execute("DELETE FROM tasks WHERE id=?", (task_id,))
-        conn.commit()
-        conn.close()
-        refresh_tasks()
+        txt = listbox.get(selected[0])
+        id_task = int(txt.split('.')[0])
+        connection = sqlite3.connect(database_file)
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM tasks WHERE id=?", (id_task,))
+        connection.commit()
+        connection.close()
+        tasks_refresh
     else:
-        messagebox.showwarning("Warning", "No task selected.")
+        messagebox.showwarning("Warning!" "No tasks selected.")
 
-# Initialize DB
-init_db()
+initial_database()
 
-# GUI setup
-root = tk.Tk()
-root.title("To-Do List (SQLite)")
+window = tk.Tk()
+window.title("To-Do List")
 
-frame = tk.Frame(root)
+frame = tk.Frame(window)
 frame.pack(padx=10, pady=10)
 
 entry = tk.Entry(frame, width=40)
 entry.grid(row=0, column=0, padx=5, pady=5)
 
-add_btn = tk.Button(frame, text="Add Task", command=add_task)
+add_btn = tk.Button(frame, text="Add Task", command=task)
 add_btn.grid(row=0, column=1, padx=5, pady=5)
 
 listbox = tk.Listbox(frame, width=50)
 listbox.grid(row=1, column=0, columnspan=2, pady=5)
 
-toggle_btn = tk.Button(frame, text="Toggle Complete", command=toggle_done)
+toggle_btn = tk.Button(frame, text="Toggle Complete", command=toggle)
 toggle_btn.grid(row=2, column=0, pady=5)
 
-delete_btn = tk.Button(frame, text="Delete Task", command=delete_task)
+delete_btn = tk.Button(frame, text="Delete Task", command=deletedtask)
 delete_btn.grid(row=2, column=1, pady=5)
 
-refresh_tasks()
+tasks_refresh()
 
-root.mainloop()
+window.mainloop()
